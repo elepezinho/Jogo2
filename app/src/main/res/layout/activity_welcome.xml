@@ -34,7 +34,7 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:background="@null"
-        android:text="Próximo"
+        android:text="Next"
         android:textColor="@android:color/white" />
 
     <Button
@@ -44,6 +44,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:background="@null"
-        android:text="Pular"
+        android:text="Skip"
         android:textColor="@android:color/white" />
 </RelativeLayout>
