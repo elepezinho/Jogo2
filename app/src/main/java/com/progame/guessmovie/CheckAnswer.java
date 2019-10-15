@@ -1,0 +1,600 @@
+package com.progame.guessmovie;
+
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.reward.RewardItem;
+import com.google.android.gms.ads.reward.RewardedVideoAd;
+import com.google.android.gms.ads.reward.RewardedVideoAdListener;
+import com.progame.guessmovie.repositorio.DbHelper;
+import com.progame.guessmovie.repositorio.PostConfig;
+
+public class CheckAnswer extends AppCompatActivity implements RewardedVideoAdListener {
+
+    private Button bt_inicio;
+    private Button bt_proximo;
+    private TextView txv_resposta;
+    private TextView txv_coins;
+    private ImageView imv_dobrar_premio;
+    private RewardedVideoAd mAd;
+    private String resposta;
+    private int moeda;
+    private String jogando;
+    private int nvlFilme;
+    private int nvlSerie;
+    private int nvlAnime;
+    private int nvlGame;
+    private int totalFilme;
+    private int totalSerie;
+    private int totalAnime;
+    private int totalGame;
+    private int recompensa = 15;
+    private AdView mAdview;
+    private InterstitialAd interstitial;
+
+    public SQLiteDatabase db;
+    public DbHelper dbHelper;
+
+    SharedPreferences pref;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_correct);
+
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        }
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
+
+        pref = getSharedPreferences("pref", MODE_PRIVATE);
+
+        bt_inicio = (Button) findViewById(R.id.bt_inicio);
+        bt_proximo = (Button) findViewById(R.id.bt_proximo);
+        txv_resposta = (TextView) findViewById(R.id.txv_resposta);
+        imv_dobrar_premio = (ImageView) findViewById(R.id.imv_dobrar_premio);
+
+        Bundle extra = getIntent().getExtras();
+
+        if(extra != null){
+            resposta = extra.getString("resposta");
+            jogando = extra.getString("jogando");
+        }
+
+        dbHelper = new DbHelper(getBaseContext());
+        db = dbHelper.getReadableDatabase();
+        String[] projection = {
+                PostConfig.PostEntry._ID,
+                PostConfig.PostEntry.COLUMN_QT_MOEDAS,
+                PostConfig.PostEntry.COLUMN_TOTAL_FILME,
+                PostConfig.PostEntry.COLUMN_TOTAL_SERIE,
+                PostConfig.PostEntry.COLUMN_TOTAL_ANIME,
+                PostConfig.PostEntry.COLUMN_TOTAL_GAME
+        };
+        Cursor c = db.query(PostConfig.PostEntry.TABLE_NAME,projection,null,null,null,null,null);
+
+        c.moveToFirst();
+        int valorMoedas = c.getInt(
+                c.getColumnIndexOrThrow(PostConfig.PostEntry.COLUMN_QT_MOEDAS)
+        );
+
+        int valorFilme = c.getInt(
+                c.getColumnIndexOrThrow(PostConfig.PostEntry.COLUMN_TOTAL_FILME)
+        );
+
+        int valorSerie = c.getInt(
+                c.getColumnIndexOrThrow(PostConfig.PostEntry.COLUMN_TOTAL_SERIE)
+        );
+
+        int valorAnime = c.getInt(
+                c.getColumnIndexOrThrow(PostConfig.PostEntry.COLUMN_TOTAL_ANIME)
+        );
+
+        int valorGame = c.getInt(
+                c.getColumnIndexOrThrow(PostConfig.PostEntry.COLUMN_TOTAL_GAME)
+        );
+
+        //pegando a preferencia moeda e somando +15
+        moeda = pref.getInt("qt_moedas", 100);
+        //moeda += recompensa;
+        //inserir qt moedas do usuario na tela
+        txv_coins = (TextView)findViewById(R.id.txv_coins_check);
+        txv_coins.setText(""+moeda);
+
+
+        //pegando as preferencias nvl de jogo
+        nvlFilme = pref.getInt("nvl_filme", 01);
+        nvlSerie = pref.getInt("nvl_serie", 01);
+        nvlAnime = pref.getInt("nvl_anime", 01);
+        nvlGame = pref.getInt("nvl_game", 01);
+        totalFilme = pref.getInt("total_filme", valorFilme);
+        totalSerie = pref.getInt("total_serie", valorSerie);
+        totalAnime = pref.getInt("total_anime", valorAnime);
+        totalGame = pref.getInt("total_game", valorGame);
+
+        SharedPreferences.Editor editor = pref.edit();
+
+        //somando mais 1 no nivel de jogo
+        if(jogando.equals("filme")) {
+            nvlFilme+=1;
+            editor.putInt("nvl_filme", nvlFilme);
+            editor.putInt("removeu_filme", 00);
+        }
+        else if(jogando.equals("serie")) {
+            nvlSerie+=1;
+            editor.putInt("nvl_serie", nvlSerie);
+            editor.putInt("removeu_serie", 00);
+        }
+        else if(jogando.equals("anime")) {
+            nvlAnime+=1;
+            editor.putInt("nvl_anime", nvlAnime);
+            editor.putInt("removeu_anime", 00);
+        }
+        else if(jogando.equals("game")) {
+            nvlGame+=1;
+            editor.putInt("nvl_game", nvlGame);
+            editor.putInt("removeu_game", 00);
+        }
+
+        editor.commit();
+
+        txv_resposta.setText(resposta);
+
+        bt_inicio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent;
+                intent = new Intent(CheckAnswer.this, MainActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        });
+
+        bt_proximo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(jogando.equals("filme")) {
+                    if (verificarAcertosFilme()) {
+                        if (nvlFilme == 7 || nvlFilme == 16 || nvlFilme == 51 || nvlFilme == 58 || nvlFilme == 60 ||
+                                nvlFilme == 70) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparParActivity.class);
+                            jogando = "filme";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        else if (nvlFilme == 2 || nvlFilme == 3 || nvlFilme == 4 || nvlFilme == 5 || nvlFilme == 6 || nvlFilme == 13 ||
+                                nvlFilme == 15 || nvlFilme == 17 || nvlFilme == 19 || nvlFilme == 23 || nvlFilme == 27 || nvlFilme == 28 ||
+                                nvlFilme == 31 || nvlFilme == 32 || nvlFilme == 38 || nvlFilme == 43 || nvlFilme == 44 || nvlFilme == 48 ||
+                                nvlFilme == 50 || nvlFilme == 57 || nvlFilme == 64) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoParActivity.class);
+                            jogando = "filme";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        else if (nvlFilme == 1 || nvlFilme == 8 || nvlFilme == 9 || nvlFilme == 11 || nvlFilme == 14 ||
+                                nvlFilme == 21 || nvlFilme == 22 || nvlFilme == 24 || nvlFilme == 26 || nvlFilme == 29 || nvlFilme == 30 ||
+                                nvlFilme == 35 || nvlFilme == 37 || nvlFilme == 40 || nvlFilme == 41 || nvlFilme == 45 || nvlFilme == 47 ||
+                                nvlFilme == 49 || nvlFilme == 52 || nvlFilme == 53 || nvlFilme == 54 || nvlFilme == 56 || nvlFilme == 62 ||
+                                nvlFilme == 65 || nvlFilme == 66 || nvlFilme == 67 || nvlFilme == 68 || nvlFilme == 69) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparImparActivity.class);
+                            jogando = "filme";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        else if (nvlFilme == 10 || nvlFilme == 12 || nvlFilme == 18|| nvlFilme == 20|| nvlFilme == 25
+                                || nvlFilme == 33 || nvlFilme == 34 || nvlFilme == 36 || nvlFilme == 39 || nvlFilme == 42
+                                || nvlFilme == 42 || nvlFilme == 46 || nvlFilme == 55 || nvlFilme == 59 || nvlFilme == 61
+                                || nvlFilme == 63) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoParImparActivity.class);
+                            jogando = "filme";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                    }
+                    else{
+                        Toast.makeText(
+                                CheckAnswer.this,
+                                "You already hit everything in this category !!\n" +
+                                        "Soon we will have more levels =)",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }
+                else if(jogando.equals("serie")) {
+                    if (verificarAcertosSerie()) {
+                        if (nvlSerie == 01 || nvlSerie == 9 || nvlSerie == 13 || nvlSerie == 14 || nvlSerie == 15
+                                || nvlSerie == 17 || nvlSerie == 20 || nvlSerie == 21 || nvlSerie == 25 || nvlSerie == 26
+                                || nvlSerie == 30 || nvlSerie == 32 || nvlSerie == 33 || nvlSerie == 41
+                                || nvlSerie == 45 || nvlSerie == 49 || nvlSerie == 50 || nvlSerie == 58
+                                || nvlSerie == 59 || nvlSerie == 62 || nvlSerie == 70) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoParActivity.class);
+                            jogando = "serie";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        } else if (nvlSerie == 02 || nvlSerie == 03 || nvlSerie == 06 || nvlSerie == 10 || nvlSerie == 11
+                                || nvlSerie == 12 || nvlSerie == 18 || nvlSerie == 19 || nvlSerie == 22
+                                || nvlSerie == 24 || nvlSerie == 27 || nvlSerie == 28 || nvlSerie == 31 || nvlSerie == 34
+                                || nvlSerie == 36 || nvlSerie == 37 || nvlSerie == 38 || nvlSerie == 46 || nvlSerie == 47
+                                || nvlSerie == 48 || nvlSerie == 52 || nvlSerie == 54 || nvlSerie == 55 || nvlSerie == 57
+                                || nvlSerie == 60 || nvlSerie == 61 || nvlSerie == 66 || nvlSerie == 67 || nvlSerie == 68
+                                || nvlSerie == 69) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparImparActivity.class);
+                            jogando = "serie";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        else if (nvlSerie == 04 || nvlSerie == 07 || nvlSerie == 16 || nvlSerie == 23
+                                || nvlSerie == 29 || nvlSerie == 39 || nvlSerie == 40 || nvlSerie == 42  || nvlSerie == 53
+                                || nvlSerie == 65) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoParImparActivity.class);
+                            jogando = "serie";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        else if (nvlSerie == 05 || nvlSerie == 8 || nvlSerie == 35 || nvlSerie == 43 || nvlSerie == 44
+                                || nvlSerie == 51 || nvlSerie == 56 || nvlSerie == 63 || nvlSerie == 64) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparParActivity.class);
+                            jogando = "serie";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                    }
+                    else{
+                        Toast.makeText(
+                                CheckAnswer.this,
+                                "You already hit everything in this category !!\n" +
+                                        "Soon we will have more levels =)",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }
+                else if(jogando.equals("anime")) {
+                    if (verificarAcertosAnime()) {
+                        if (nvlAnime == 01 || nvlAnime == 02 || nvlAnime == 05 || nvlAnime == 15 || nvlAnime == 17 || nvlAnime == 20 || nvlAnime == 22 || nvlAnime == 23
+                                || nvlAnime == 28 || nvlAnime == 31 || nvlAnime == 32 || nvlAnime == 33 || nvlAnime == 34 || nvlAnime == 39 || nvlAnime == 43 || nvlAnime == 44
+                                || nvlAnime == 48 || nvlAnime == 49 || nvlAnime == 54 || nvlAnime == 57 || nvlAnime == 63 || nvlAnime == 64 || nvlAnime == 67) {
+                        Intent intent = new Intent(CheckAnswer.this, JogoParActivity.class);
+                        jogando = "anime";
+                        intent.putExtra("jogando", jogando);
+                        startActivity(intent);
+                        overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                        finish();
+                        }
+                        if (nvlAnime == 03 || nvlAnime == 06 || nvlAnime == 8 || nvlAnime == 9 ||  nvlAnime == 12 || nvlAnime == 13 || nvlAnime == 18 || nvlAnime == 19  || nvlAnime == 24
+                                || nvlAnime == 26 || nvlAnime == 29 || nvlAnime == 30 || nvlAnime == 36 || nvlAnime == 37 || nvlAnime == 38
+                                || nvlAnime == 40 || nvlAnime == 42 || nvlAnime == 47 || nvlAnime == 50 || nvlAnime == 51 || nvlAnime == 52 || nvlAnime == 53
+                                || nvlAnime == 56 || nvlAnime == 58 || nvlAnime == 59 || nvlAnime == 69 || nvlAnime == 70) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparImparActivity.class);
+                            jogando = "anime";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        if (nvlAnime == 04 || nvlAnime == 07 || nvlAnime == 10 || nvlAnime == 25 || nvlAnime == 27 || nvlAnime == 41 || nvlAnime == 45
+                                || nvlAnime == 46 || nvlAnime == 61 || nvlAnime == 62 || nvlAnime == 68) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparParActivity.class);
+                            jogando = "anime";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        if (nvlAnime == 11 || nvlAnime == 14 || nvlAnime == 16 || nvlAnime == 21 || nvlAnime == 35|| nvlAnime == 55|| nvlAnime == 60
+                                || nvlAnime == 65|| nvlAnime == 66) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoParImparActivity.class);
+                            jogando = "anime";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                    }
+                    else{
+                        Toast.makeText(
+                                CheckAnswer.this,
+                                "You already hit everything in this category !!\n" +
+                                        "Soon we will have more levels =)",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }
+                if(jogando.equals("game")) {
+                    if (verificarAcertosGame()) {
+                        if (nvlGame == 1 || nvlGame == 3 || nvlGame == 4 || nvlGame == 9 || nvlGame == 16 || nvlGame == 17 || nvlGame == 23 || nvlGame ==24 || nvlGame == 25
+                                || nvlGame == 27 || nvlGame == 28 || nvlGame == 29 || nvlGame == 30 || nvlGame == 31 || nvlGame == 33 || nvlGame == 35 || nvlGame == 36
+                                || nvlGame == 37 || nvlGame == 42 || nvlGame == 43 || nvlGame == 44 || nvlGame == 45 || nvlGame == 46 || nvlGame == 47 || nvlGame == 51
+                                || nvlGame == 54 || nvlGame == 55 || nvlGame == 57 || nvlGame == 58 || nvlGame == 59 || nvlGame == 60 || nvlGame == 63 || nvlGame == 64
+                                || nvlGame == 68 || nvlGame == 69) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparImparActivity.class);
+                            jogando = "game";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        } if (nvlGame == 6 || nvlGame == 8 || nvlGame == 12 || nvlGame == 21 || nvlGame == 48 || nvlGame == 50) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoParImparActivity.class);
+                            jogando = "game";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        } if (nvlGame == 2 || nvlGame == 5 || nvlGame == 7 || nvlGame == 10  || nvlGame == 14 || nvlGame == 18 || nvlGame == 19 || nvlGame == 20
+                                || nvlGame == 26 || nvlGame == 32 || nvlGame == 34 || nvlGame == 38 || nvlGame == 39 || nvlGame == 40 || nvlGame == 41
+                                || nvlGame == 49 || nvlGame == 52 || nvlGame == 53 || nvlGame == 61 || nvlGame == 62 || nvlGame == 65 || nvlGame == 67) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoParActivity.class);
+                            jogando = "game";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                        if (nvlGame == 11 || nvlGame == 13 || nvlGame == 15 || nvlGame == 22 || nvlGame == 56 || nvlGame == 66 || nvlGame == 70) {
+                            Intent intent = new Intent(CheckAnswer.this, JogoImparParActivity.class);
+                            jogando = "game";
+                            intent.putExtra("jogando", jogando);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.activity_in, R.anim.activity_out);
+                            finish();
+                        }
+                    }
+                    else{
+                        Toast.makeText(
+                                CheckAnswer.this,
+                                "You already hit everything in this category !!\n" +
+                                        "Soon we will have more levels =)",
+                                Toast.LENGTH_LONG
+                        ).show();
+                    }
+                }
+            }
+        });
+
+        //banner
+        MobileAds.initialize(this,"ca-app-pub-1493186259985891~9080093224");
+        mAdview = (AdView)findViewById(R.id.adView);
+        //AdRequest adRequest = new AdRequest.Builder().build();
+        AdRequest adRequest = new AdRequest.Builder().addTestDevice("62CEF960E90EB0624DAE57D22F2290E8").build();
+        mAdview.loadAd(adRequest);
+
+        AdView adView = new AdView(this);
+        adView.setAdSize(AdSize.BANNER);
+        adView.setAdUnitId("ca-app-pub-1493186259985891/2131541497");
+
+        MobileAds.initialize(getApplicationContext(),"ca-app-pub-1493186259985891~9080093224"); //
+
+        mAd = MobileAds.getRewardedVideoAdInstance(this);
+        mAd.setRewardedVideoAdListener(this);
+
+        loadRewardVideoAd();
+    }
+
+    private void exibirPropaganda(){
+        //propaganda interticial
+        AdRequest adRequest = new AdRequest.Builder().addTestDevice("62CEF960E90EB0624DAE57D22F2290E8").build();
+        //AdRequest adRequest = new AdRequest.Builder().build();
+        interstitial = new InterstitialAd(CheckAnswer.this);
+        interstitial.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
+        interstitial.loadAd(adRequest);
+        interstitial.setAdListener(new AdListener() {
+            @Override
+            public void onAdLoaded() {
+                displayInterstitial();
+            }
+        });
+    }
+
+    private boolean verificarAcertosFilme() {
+        if(nvlFilme%5==0){
+            exibirPropaganda();
+        }
+        if (nvlFilme <= totalFilme) return true;
+        else return false;
+    }
+
+    private boolean verificarAcertosSerie() {
+        if(nvlSerie%5==0){
+            exibirPropaganda();
+        }
+        if (nvlSerie <= totalSerie) return true;
+        else return false;
+    }
+
+    private boolean verificarAcertosAnime() {
+        if(nvlAnime%5==0){
+            exibirPropaganda();
+        }
+        if (nvlAnime <= totalAnime) return true;
+        else return false;
+    }
+
+    private boolean verificarAcertosGame() {
+        if(nvlGame%5==0){
+            exibirPropaganda();
+        }
+        if (nvlGame <= totalGame) return true;
+        else return false;
+    }
+
+    private void displayInterstitial() {
+        if (interstitial.isLoaded()) {
+            interstitial.show();
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        final View decorview = getWindow().getDecorView();
+        decorview.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
+
+        decorview.setOnSystemUiVisibilityChangeListener(
+                new View.OnSystemUiVisibilityChangeListener() {
+                    @Override
+                    public void onSystemUiVisibilityChange(int i) {
+                        decorview.setSystemUiVisibility(
+                                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
+                    }
+                }
+        );
+    }
+
+    @Override
+    public void onBackPressed() {
+        // finish() is called in super: we only override method to be able to override transition
+        super.onBackPressed();
+        overridePendingTransition(R.anim.activity_back_in, R.anim.activity_back_out);
+    }
+
+    private void  loadRewardVideoAd()
+    {
+        if(!mAd.isLoaded())
+        {
+            // Teste Emulador Silas ?
+            mAd.loadAd("ca-app-pub-1493186259985891/7164376328", new AdRequest.Builder().addTestDevice("62CEF960E90EB0624DAE57D22F2290E8").build());
+
+            // Propaganda Oficial Admbob Vídeo
+            //mAd.loadAd("ca-app-pub-1493186259985891/7164376328", new AdRequest.Builder().addTestDevice("120865D338B2B57631C70E619CB5BB9F").build());
+
+            // Usar o meio abaixo para ambiente de teste das propagandas em vídeo.
+            //mAd.loadAd("ca-app-pub-3940256099942544/5224354917", new AdRequest.Builder().build()); //
+
+            // Teste J5PRO Bruno propaganda de teste do Google
+            //mAd.loadAd("ca-app-pub-3940256099942544/5224354917", new AdRequest.Builder().addTestDevice("F3678A4C70411DAE35F783415032A15A").build());
+
+            // Teste J5PRO Bruno propaganda oficial
+            //mAd.loadAd("ca-app-pub-1493186259985891/7164376328", new AdRequest.Builder().addTestDevice("F3678A4C70411DAE35F783415032A15A").build());
+        }
+    }
+
+    public void startVideoAd(View view)
+    {
+        if(mAd.isLoaded())
+        {
+            mAd.show();
+        } else {
+            loadRewardVideoAd();
+            mAd.show();
+        }
+        txv_coins.setText(""+moeda);
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putInt("qt_moedas", moeda);
+        editor.commit();
+    }
+
+    @Override
+    public void onRewardedVideoAdLoaded() {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdOpened() {
+
+    }
+
+    @Override
+    public void onRewardedVideoStarted() {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdClosed() {
+
+        loadRewardVideoAd();
+
+    }
+
+    @Override
+    public void onRewarded(RewardItem rewardItem) {
+        moeda+=recompensa;
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putInt("qt_moedas", moeda);
+        editor.commit();
+        txv_coins.setText(""+moeda);
+    }
+
+    @Override
+    public void onRewardedVideoAdLeftApplication() {
+
+    }
+
+    @Override
+    public void onRewardedVideoAdFailedToLoad(int i) {
+
+    }
+
+    @Override
+    protected void onPause() {
+        mAd.pause(this);
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        mAd.resume(this);
+        super.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        //mAd.destroy(this);
+        super.onDestroy();
+    }
+}

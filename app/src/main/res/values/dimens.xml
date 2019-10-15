@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="lt_opc_width">28dp</dimen>
+    <dimen name="lt_opc_height">33dp</dimen>
+
+    <dimen name="lt_opc_width1">26dp</dimen>
+    <dimen name="lt_opc_height1">31dp</dimen>
+</resources>

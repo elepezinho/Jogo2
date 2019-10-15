@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Guess Movie</string>
+    <string name="espaco">24dp</string>
+    <string name="sem_espaco">0dp</string>
+    <string name="sharing_text">Can you help me with this level? Download Guess Movie and Play Also: </string>
+    <string name="share_title">Ask Your Friends for Help!</string>
+    <string name="screenshot_take_failed">Failed to share !!</string>
+    <string name="wait">Wait a minute…</string>
+    <string name="full_page_screenshot">Full Page Screenshot</string>
+    <string name="hidden_text">Hidden Text</string>
+    <string name="custom_page_screenshot">Next Level</string>
+    <string name="interstitial_ad_unit_id">ca-app-pub-1493186259985891/5169456736</string>
+    <string name="titulo_01">The game</string>
+    <string name="titulo_02">Solve the level!</string>
+    <string name="titulo_03">Did you find the level difficult?</string>
+    <string name="titulo_04">Locked up?</string>
+    <string name="titulo_05">Is the money over?</string>
+    <string name="titulo_06">A cheap tip!</string>
+    <string name="description_01">Discover the names of Movies, Anime, Series and Games through emojis that are inside the square!</string>
+    <string name="description_02">Use your coins to solve the level and go to the next challenge!</string>
+    <string name="description_03">Cant unscramble the letters? Delete any left over.</string>
+    <string name="description_04">Ask your friends for help through your social networks!</string>
+    <string name="description_05">Watch videos and get rich again!</string>
+    <string name="description_06">When the stage name doesnt come to mind, use this tip to buy a letter to help your memory!</string>
+    <string name="informacoes">Information</string>
+    <string name="tutorial">How To Play Tutorial</string>
+    <string name="questionario">Send Us Your Game Feedback</string>
+    <string name="versao">Version Alpha</string>
+    <string name="back4app_server_url">https://parseapi.back4app.com/</string>
+    <string name="back4app_app_id">oeV19uJ70PTrEp5pVzyEtjHvP3VIojn2FfBb0cPE</string>
+    <string name="back4app_client_key">DmfjkhRm8gfDu159ejbanH1q6NnHnPm8UwWhpupT</string>
+    <string name="firebase_sender">id:85245602085</string>
+    <string name="firebase_sender_number">85245602085</string>
+</resources>

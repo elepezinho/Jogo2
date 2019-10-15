@@ -1,0 +1,49 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="130dp"
+    android:padding="3dp">
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/img_category"
+        android:layout_width="100dp"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/item_category"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_name_category"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FILME"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="30dp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/img_star"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/start" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/txv_level"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:text="100/100"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
